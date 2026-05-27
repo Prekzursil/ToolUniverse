@@ -113,6 +113,16 @@ class AlphaFoldRESTTool(BaseTool):
                 "https://alphafold.ebi.ac.uk/download or via PDB.",
                 "endpoint": url,
             }
+        if resp.status_code == 400:
+            return {
+                "status": "error",
+                "error": (
+                    "AlphaFold API rejected the request (HTTP 400). The qualifier "
+                    "must be a valid UniProt accession (e.g. 'P69905'); check the "
+                    "value and try again."
+                ),
+                "endpoint": url,
+            }
         if resp.status_code != 200:
             return {
                 "status": "error",

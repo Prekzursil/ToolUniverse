@@ -187,12 +187,20 @@ class CompoundVariantAnnotationTool(BaseTool):
         if not isinstance(result, dict):
             return {"raw": str(result)[:200]}
         data = result.get("data", {})
-        if isinstance(data, list) and data:
-            entry = data[0]
+        # UniProt_search returns {"results": [...]}; tolerate a bare list too.
+        if isinstance(data, dict):
+            entries = data.get("results", [])
+        elif isinstance(data, list):
+            entries = data
+        else:
+            entries = []
+        if entries:
+            entry = entries[0]
+            gene_names = entry.get("gene_names") or []
             return {
                 "accession": entry.get("accession", ""),
                 "protein_name": entry.get("protein_name", ""),
-                "gene_name": entry.get("gene_name", ""),
+                "gene_name": gene_names[0] if gene_names else entry.get("gene_name", ""),
                 "function": str(entry.get("function", ""))[:300],
             }
         return {"raw": str(data)[:200]}
@@ -231,14 +239,20 @@ class CompoundVariantAnnotationTool(BaseTool):
                 summary["sources_with_data"].append(source)
 
         clinvar = annotations.get("clinvar", {})
-        if clinvar.get("variants"):
-            classifications = [
-                v["classification"]
-                for v in clinvar["variants"]
-                if v.get("classification")
-            ]
-            if classifications:
-                summary["clinvar_classification"] = classifications[0]
+        clinvar_variants = clinvar.get("variants") or []
+        if clinvar_variants:
+            # ClinVar is searched at the gene level, so this is a list of the
+            # gene's variants — not the specific variant queried. Reporting one
+            # variant's classification as "the" classification would misrepresent
+            # an arbitrary entry, so surface a count instead and, for a
+            # variant-specific query, flag that variant-level lookup is needed.
+            summary["clinvar_variants_found"] = len(clinvar_variants)
+            if variant:
+                summary["clinvar_note"] = (
+                    "ClinVar is queried at the gene level; the specific variant "
+                    "is not resolved here. Use a variant-level ClinVar lookup "
+                    "for a definitive classification."
+                )
 
         gnomad = annotations.get("gnomad", {})
         if gnomad.get("constraints"):

@@ -122,7 +122,29 @@ class ClinVarRESTTool(BaseTool):
         variant_data = data.get("result", {}).get(variant_id)
 
         if not variant_data:
-            return {"error_result": result}
+            # HTTP 200 but the variant was not resolved. NCBI reports the reason
+            # in data["error"] (e.g. "Invalid uid rs7903146"), yet the raw
+            # envelope still carries status="success" — so fail closed here
+            # rather than passing a misleading success upstream.
+            ncbi_error = data.get("error", "")
+            hint = (
+                " ClinVar expects a numeric variation UID (e.g. '12345'), not an "
+                "rsID — resolve the rsID to a ClinVar ID first."
+                if str(variant_id).lower().startswith("rs")
+                else ""
+            )
+            return {
+                "error_result": {
+                    "status": "error",
+                    "error": (
+                        f"ClinVar variant '{variant_id}' not found"
+                        + (f": {ncbi_error}" if ncbi_error else "")
+                        + "."
+                        + hint
+                    ),
+                    "url": result.get("url"),
+                }
+            }
 
         # Check for NCBI inline error (HTTP 200 but variant not found)
         if variant_data.get("error"):

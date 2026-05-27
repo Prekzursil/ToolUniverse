@@ -5,6 +5,19 @@ from .base_tool import BaseTool, ToolError
 from .tool_registry import register_tool
 
 
+def _uniprot_total_results(resp: requests.Response, results: list) -> int:
+    """UniProt returns the total match count in the 'x-total-results' response
+    header, not the JSON body (there is no 'resultsFound' key), so prefer the
+    header and fall back to the returned-page length."""
+    header_total = resp.headers.get("x-total-results")
+    if header_total is not None:
+        try:
+            return int(header_total)
+        except (TypeError, ValueError):
+            pass
+    return len(results)
+
+
 @register_tool("UniProtRESTTool")
 class UniProtRESTTool(BaseTool):
     def __init__(self, tool_config: Dict):
@@ -272,7 +285,7 @@ class UniProtRESTTool(BaseTool):
                 return {
                     "status": "success",
                     "data": {
-                        "total_results": data.get("resultsFound", 0),
+                        "total_results": _uniprot_total_results(resp, results),
                         "returned": len(results),
                         "results": results,
                     },
@@ -319,7 +332,7 @@ class UniProtRESTTool(BaseTool):
             return {
                 "status": "success",
                 "data": {
-                    "total_results": data.get("resultsFound", len(results)),
+                    "total_results": _uniprot_total_results(resp, results),
                     "returned": len(results),
                     "results": formatted_results,
                 },
@@ -502,7 +515,7 @@ class UniProtRESTTool(BaseTool):
             return {
                 "status": "success",
                 "data": {
-                    "total_results": data.get("resultsFound", len(results)),
+                    "total_results": _uniprot_total_results(resp, results),
                     "returned": len(results),
                     "results": results,
                 },
@@ -538,7 +551,7 @@ class UniProtRESTTool(BaseTool):
             return {
                 "status": "success",
                 "data": {
-                    "total_results": data.get("resultsFound", len(results)),
+                    "total_results": _uniprot_total_results(resp, results),
                     "returned": len(results),
                     "results": results,
                 },
