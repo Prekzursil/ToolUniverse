@@ -39,12 +39,26 @@ class CompoundVariantAnnotationTool(BaseTool):
 
         query_term = rsid or variant or gene
 
-        # 1. ClinVar
+        # Derive an effective gene symbol up front: an explicit gene, or the
+        # leading token of a variant like "BRAF V600E".
+        gene_for_gnomad = gene
+        if not gene_for_gnomad and variant:
+            parts = variant.split()
+            if parts:
+                gene_for_gnomad = parts[0]
+
+        # 1. ClinVar — search by gene when one is known. ClinVar_search_variants'
+        # free-text 'query' is an alias for disease/condition, not a gene/rsid/
+        # variant token, so passing those there silently returns no variants.
         try:
+            if gene_for_gnomad:
+                clinvar_args = {"gene": gene_for_gnomad, "limit": 10}
+            else:
+                clinvar_args = {"query": query_term, "limit": 10}
             r = tu.run_one_function(
                 {
                     "name": "ClinVar_search_variants",
-                    "arguments": {"query": query_term, "limit": 10},
+                    "arguments": clinvar_args,
                 }
             )
             annotations["clinvar"] = self._parse_clinvar(r)
@@ -52,11 +66,6 @@ class CompoundVariantAnnotationTool(BaseTool):
             sources_failed.append(f"ClinVar: {str(e)[:100]}")
 
         # 2. gnomAD
-        gene_for_gnomad = gene
-        if not gene_for_gnomad and variant:
-            parts = variant.split()
-            if parts:
-                gene_for_gnomad = parts[0]
         if gene_for_gnomad:
             try:
                 r = tu.run_one_function(
@@ -188,6 +197,27 @@ class CompoundVariantAnnotationTool(BaseTool):
             }
         return {"raw": str(data)[:200]}
 
+    @staticmethod
+    def _source_has_data(source: str, data: Any) -> bool:
+        """True only when a source actually returned content. A successful parse
+        that yielded zero records (e.g. {"total": 0, "variants": []}) is NOT data —
+        reporting it as such falsely tells the caller evidence exists."""
+        if not isinstance(data, dict) or data.get("raw"):
+            return False
+        if source == "clinvar":
+            return bool(data.get("variants")) or bool(data.get("total"))
+        if source == "civic":
+            return bool(data.get("total_variants"))
+        if source == "gnomad":
+            return bool(
+                data.get("constraints")
+                or data.get("variants_summary")
+                or data.get("gene")
+            )
+        if source == "uniprot":
+            return bool(data.get("accession"))
+        return any(data.values())
+
     def _build_summary(
         self,
         annotations: Dict[str, Any],
@@ -197,7 +227,7 @@ class CompoundVariantAnnotationTool(BaseTool):
     ) -> Dict[str, Any]:
         summary = {"query": variant or gene or rsid, "sources_with_data": []}
         for source, data in annotations.items():
-            if data and not data.get("raw"):
+            if self._source_has_data(source, data):
                 summary["sources_with_data"].append(source)
 
         clinvar = annotations.get("clinvar", {})

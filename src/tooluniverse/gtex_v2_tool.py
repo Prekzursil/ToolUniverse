@@ -160,12 +160,20 @@ class GTExV2Tool(BaseTool):
             data = response.json()
             # clusteredMedianGeneExpression returns data under 'medianGeneExpression' key
             results = data.get("data", data.get("medianGeneExpression", []))
-            return {
+            result = {
                 "status": "success",
                 "data": results,
                 "paging_info": data.get("paging_info", {}),
                 "num_results": len(results),
             }
+            # An empty result under gtex_v10 is a known dataset limitation, not "no
+            # expression" — surface it so the caller isn't misled by success+empty.
+            if not results and dataset_id == "gtex_v10":
+                result["dataset_note"] = (
+                    "gtex_v10 returns no rows for medianGeneExpression; gtex_v8 is "
+                    "the stable dataset. Re-run with dataset_id='gtex_v8' (the default)."
+                )
+            return result
         elif response.status_code == 422 and tissue_ids:
             return {
                 "status": "error",

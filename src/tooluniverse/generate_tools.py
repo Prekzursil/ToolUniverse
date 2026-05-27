@@ -313,7 +313,7 @@ __all__ = ["{tool_name}"]
 '''
 
     output_path = output_dir / f"{tool_name}.py"
-    output_path.write_text(content)
+    output_path.write_text(content, encoding="utf-8")
     return output_path
 
 
@@ -360,7 +360,7 @@ __all__ = [
 '''
 
     init_path = output_dir / "__init__.py"
-    init_path.write_text(content)
+    init_path.write_text(content, encoding="utf-8")
     return init_path
 
 
@@ -505,7 +505,7 @@ def reset_shared_client():
     with _client_lock:
         _client = None
 '''
-    shared_client_path.write_text(content)
+    shared_client_path.write_text(content, encoding="utf-8")
 
 
 def _chunked(sequence: List[str], chunk_size: int) -> List[List[str]]:

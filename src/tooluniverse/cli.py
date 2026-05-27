@@ -545,6 +545,20 @@ def _print_result(result: Any, args: argparse.Namespace, render_fn=None) -> None
             print(json.dumps(result, indent=2, ensure_ascii=False))
 
 
+def _force_utf8_output() -> None:
+    """Reconfigure stdout/stderr to UTF-8 so non-Latin-1 characters in tool output
+    (e.g. →, β, μ, Å, common in scientific text) don't crash the CLI on a default
+    Windows (cp1252) console. errors='replace' guarantees no UnicodeEncodeError."""
+    for _stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(_stream, "reconfigure", None)
+        if reconfigure is None:
+            continue
+        encoding = (getattr(_stream, "encoding", "") or "").lower()
+        if encoding not in ("utf-8", "utf8"):
+            with contextlib.suppress(Exception):
+                reconfigure(encoding="utf-8", errors="replace")
+
+
 # ── category helpers ────────────────────────────────────────────────────────────
 
 
@@ -1523,6 +1537,7 @@ def cmd_serve(_args: argparse.Namespace) -> None:
 
 
 def main() -> None:
+    _force_utf8_output()
     # Shared output flags
     _out = argparse.ArgumentParser(add_help=False)
     _out.add_argument(
