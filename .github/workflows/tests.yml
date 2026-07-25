@@ -50,7 +50,11 @@ jobs:
       - name: Check code formatting/linting requirements
         uses: astral-sh/ruff-action@v3
         with:
-          version: "latest"
+          # Pinned deliberately: `version: "latest"` made this gate depend on
+          # whichever ruff was released that day. ruff 0.16.0 expanded its
+          # default rule set and turned CI red without any code change.
+          # 0.15.21 is the last version observed green in CI (run 29110337427).
+          version: "0.15.21"
 
 
       - name: Generate SDK
