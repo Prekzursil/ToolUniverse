@@ -177,6 +177,23 @@ dev = [
     "tooluniverse[dev,embedding]",
 ]
 
+[tool.uv]
+# Security floor for a TRANSITIVE dependency.
+#
+# `transformers` is not declared and never imported directly by this project
+# (zero `import transformers` sites). It reaches the lockfile through
+# sentence-transformers, which is pulled in by the `embedding`/`ml` extras and
+# by the `dev` dependency-group above. Versions below 5.5.0 carry three open
+# advisories: GHSA-fgcw-684q-jj6r (high, <5.5.0), GHSA-29pf-2h5f-8g72
+# (high, <5.3.0) and GHSA-69w3-r845-3855 (medium, <5.0.0rc3). A single
+# >=5.5.0 floor clears all three.
+#
+# Expressed as a constraint rather than a dependency so the floor survives
+# future `uv lock` runs without declaring a package we do not import. The
+# upper bound tracks sentence-transformers' own `transformers<6.0.0` bound;
+# revisit it deliberately rather than letting a major bump land unreviewed.
+constraint-dependencies = ["transformers>=5.5.0,<6.0.0"]
+
 [tool.uv.sources]
 tooluniverse = { workspace = true }
 
