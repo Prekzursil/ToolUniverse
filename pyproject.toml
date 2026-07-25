@@ -32,7 +32,13 @@ dependencies = [
     "rcsb-api>=1.4.0",
     "fitz>=0.0.1.dev2",
     "pandas>=2.2.3",
-    "setuptools>=70.0.0,<81.0.0", # Fix pkg_resources deprecation warnings
+    # Upper bound widened to admit 83.0.0, which fixes GHSA-h35f-9h28-mq5c /
+    # CVE-2026-59890 (MANIFEST.in exclusion bypass via Unicode NFC/NFD
+    # collision). No release below 81.0.0 carries that fix, so the previous
+    # `<81.0.0` cap blocked it. Note 82.0.0 removed `pkg_resources` outright;
+    # this project only aliases `importlib.resources as pkg_resources` and never
+    # imports the real module, so the removal does not affect our own code.
+    "setuptools>=70.0.0,<84.0.0",
     "pdfplumber>=0.11.0",
     "playwright>=1.55.0",
     "faiss-cpu==1.12.0",
