@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools>=84.1.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -30,7 +30,9 @@ dependencies = [
     "huggingface_hub>=0.34.0",
     "jsonpath-ng>=1.6.0",
     "rcsb-api>=1.4.0",
-    "fitz>=0.0.1.dev2",
+    # provides the `fitz` import (PyMuPDF); the old `fitz` PyPI name is a
+    # name-squatted stub whose 0.0.1.dev2 was removed, which blocked relocking.
+    "pymupdf>=1.24.0",
     "pandas>=2.2.3",
     # Upper bound widened to admit 83.0.0, which fixes GHSA-h35f-9h28-mq5c /
     # CVE-2026-59890 (MANIFEST.in exclusion bypass via Unicode NFC/NFD
@@ -38,7 +40,10 @@ dependencies = [
     # `<81.0.0` cap blocked it. Note 82.0.0 removed `pkg_resources` outright;
     # this project only aliases `importlib.resources as pkg_resources` and never
     # imports the real module, so the removal does not affect our own code.
-    "setuptools>=70.0.0,<84.0.0",
+    # Upper bound widened again (2026-11): GHSA-xmj3-9gf7-h52w is fixed only in
+    # setuptools 84.1.0, so the previous <84.0.0 cap blocked it. No upper cap
+    # anymore: every past cap here has only ever blocked security fixes.
+    "setuptools>=84.1.0",
     "pdfplumber>=0.11.0",
     "playwright>=1.55.0",
     "faiss-cpu==1.12.0",
@@ -52,7 +57,7 @@ dependencies = [
     "pip>=25.3",
     "jsonschema>=4.23.0",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"  # 3.10 EOL 2026-10; Pillow 13 (security floor) needs >=3.11
 readme = "README.md"
 
 [project.optional-dependencies]
@@ -178,6 +183,12 @@ dev = [
 ]
 
 [tool.uv]
+# fitz 0.0.1.dev2 (pinned upstream dep) was removed from PyPI for the
+# win32/py3.14+ fork, which makes any full re-resolution fail there. CI is
+# ubuntu/py3.12; keep every other environment lockable.
+environments = ["sys_platform != 'win32'", "python_full_version < '3.14' and sys_platform == 'win32'"]
+
+
 # Security floor for a TRANSITIVE dependency.
 #
 # `transformers` is not declared and never imported directly by this project
@@ -192,7 +203,14 @@ dev = [
 # future `uv lock` runs without declaring a package we do not import. The
 # upper bound tracks sentence-transformers' own `transformers<6.0.0` bound;
 # revisit it deliberately rather than letting a major bump land unreviewed.
-constraint-dependencies = ["transformers>=5.5.0,<6.0.0"]
+constraint-dependencies = [
+  "transformers>=5.5.0,<6.0.0",
+  # Security floors: Pillow <13.0.0 carries the open 2026 advisories (fixed in
+  # 13.0.0); setuptools <84.1.0 carries GHSA-xmj3-9gf7-h52w (fixed in 84.1.0,
+  # also floored in build-system above).
+  "pillow>=13.0.0",
+  "setuptools>=84.1.0",
+]
 
 [tool.uv.sources]
 tooluniverse = { workspace = true }
