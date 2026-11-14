@@ -60,7 +60,7 @@ dependencies = [
     "pip>=25.3",
     "jsonschema>=4.23.0",
 ]
-requires-python = ">=3.11"  # 3.10 EOL 2026-10; Pillow 13 (security floor) needs >=3.11
+requires-python = ">=3.11.5"  # 3.10 EOL 2026-10; Pillow 13 + soupsieve 4 (security floors) need >=3.11(.5)
 readme = "README.md"
 
 [project.optional-dependencies]
@@ -213,6 +213,10 @@ constraint-dependencies = [
   # also floored in build-system above).
   "pillow>=13.0.0",
   "setuptools>=84.1.0",
+  # per-fork stragglers: the win32 fork resolved virtualenv 21.14.5 and the
+  # py<3.11.5 fork resolved soupsieve 2.10 — both below their advisory floors.
+  "virtualenv>=21.14.9",
+  "soupsieve>=4.0.0",
 ]
 
 [tool.uv.sources]
