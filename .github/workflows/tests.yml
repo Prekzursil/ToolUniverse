@@ -45,7 +45,9 @@ jobs:
 
       - name: Install project with dev extras
         run: |
-          uv pip install -e .[dev] --system
+          # Sync from uv.lock so CI tests the exact validated resolution
+          # (fastmcp 3.4.11 + mcp 1.30.0; 3.4.10 breaks on mcp>=1.30).
+          uv sync --all-extras --dev
 
       - name: Check code formatting/linting requirements
         uses: astral-sh/ruff-action@v3
