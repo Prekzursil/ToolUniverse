@@ -26,7 +26,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential libffi-dev libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev libncurses5-dev libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev libjpeg-dev libpng-dev libtiff-dev libwebp-dev libopenjp2-7-dev libharfbuzz-dev libfribidi-dev libfreetype6-dev libfontconfig1-dev libblas-dev liblapack-dev libatlas-base-dev gfortran libpoppler-cpp-dev libpoppler-dev libhdf5-dev libnetcdf-dev libgl1 libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1 libcairo2-dev libpango1.0-dev libpangocairo-1.0-0 libgdk-pixbuf2.0-dev libffi-dev shared-mime-info graphviz libgraphviz-dev
+          sudo apt-get install -y build-essential libffi-dev libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev libncurses5-dev libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev libjpeg-dev libpng-dev libtiff-dev libwebp-dev libopenjp2-7-dev libharfbuzz-dev libfribidi-dev libfreetype6-dev libfontconfig1-dev libblas-dev liblapack-dev gfortran libpoppler-cpp-dev libpoppler-dev libhdf5-dev libnetcdf-dev libgl1 libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1 libcairo2-dev libpango1.0-dev libpangocairo-1.0-0 libffi-dev shared-mime-info graphviz libgraphviz-dev
 
       - name: Cache dependencies
         uses: actions/cache@v3
@@ -45,7 +45,9 @@ jobs:
 
       - name: Install project with dev extras
         run: |
-          uv pip install -e .[dev] --system
+          # Sync from uv.lock so CI tests the exact validated resolution
+          # (fastmcp 3.4.11 + mcp 1.30.0; 3.4.10 breaks on mcp>=1.30).
+          uv sync --all-extras --dev
 
       - name: Check code formatting/linting requirements
         uses: astral-sh/ruff-action@v3
@@ -58,12 +60,12 @@ jobs:
 
 
       - name: Generate SDK
-        run: python scripts/build_tools.py
+        run: uv run python scripts/build_tools.py
 
       - name: Run core tests (unit + integration)
         timeout-minutes: 15
         run: |
-          pytest tests/unit/ tests/integration/ -v \
+          uv run pytest tests/unit/ tests/integration/ -v \
             --cov=tooluniverse \
             --cov-report=xml \
             --cov-report=term \
@@ -72,12 +74,12 @@ jobs:
 
       - name: Test doctor CLI tool
         run: |
-          python -m src.tooluniverse.doctor
+          uv run python -m src.tooluniverse.doctor
 
       - name: Run tools, examples, and api tests (optional, requires network)
         if: github.event.inputs.run_tools_tests == 'true' || github.event_name == 'workflow_dispatch'
         run: |
-          pytest tests/tools/ tests/examples/ tests/api/ -v \
+          uv run pytest tests/tools/ tests/examples/ tests/api/ -v \
             --tb=short \
             -m "not slow and not require_api_keys"
 
