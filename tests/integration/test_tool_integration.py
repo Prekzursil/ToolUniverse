@@ -63,6 +63,7 @@ class TestToolExecution:
             # Expected if API key not configured
             assert isinstance(e, Exception)
 
+    @pytest.mark.network  # calls live remote tool APIs
     def test_tool_execution_multiple_tools_real(self):
         """Test real tool execution with multiple tools."""
         # Test multiple tool calls individually

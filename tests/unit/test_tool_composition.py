@@ -265,6 +265,7 @@ class TestToolComposition(unittest.TestCase):
                     self.assertIn("description", spec)
                     self.assertIn("parameter", spec)
 
+    @pytest.mark.network  # calls live UniProt/ArXiv APIs
     def test_workflow_monitoring_real(self):
         """Test workflow monitoring with real ToolUniverse."""
         # Test workflow metrics collection
@@ -358,6 +359,7 @@ class TestToolComposition(unittest.TestCase):
         # At least some should succeed or fail gracefully
         self.assertTrue(len(integration_results) > 0)
 
+    @pytest.mark.network  # calls live UniProt/ArXiv APIs
     def test_workflow_debugging_real(self):
         """Test workflow debugging with real ToolUniverse."""
         # Test debugging workflow
