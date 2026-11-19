@@ -464,15 +464,6 @@ tooluniverse.geo\_tool module
    :show-inheritance:
    :private-members:
 
-tooluniverse.ghost\_tool module
--------------------------------
-
-.. automodule:: tooluniverse.ghost_tool
-   :members:
-   :undoc-members:
-   :show-inheritance:
-   :private-members:
-
 tooluniverse.gnomad\_tool module
 --------------------------------
 
@@ -657,15 +648,6 @@ tooluniverse.medlineplus\_tool module
 -------------------------------------
 
 .. automodule:: tooluniverse.medlineplus_tool
-   :members:
-   :undoc-members:
-   :show-inheritance:
-   :private-members:
-
-tooluniverse.medrxiv\_tool module
----------------------------------
-
-.. automodule:: tooluniverse.medrxiv_tool
    :members:
    :undoc-members:
    :show-inheritance:
